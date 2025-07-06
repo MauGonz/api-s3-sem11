@@ -85,15 +85,33 @@ def upload_file_handler(event, context):
         
         bucket_name = body.get('bucket_name')
         file_name = body.get('file_name')
-        file_content = body.get('file_content')
+        file_content_base64 = body.get('file_content')
 
-        if not bucket_name or not file_name or file_content is None:
+        if not bucket_name or not file_name or file_content_base64 is None:
             return {
                 'statusCode': 400,
                 'message': 'Missing "bucket_name", "file_name", or "file_content" in request body.'
             }
         
-        s3.put_object(Bucket=bucket_name, Key=file_name, Body=file_content)
+        try:
+            file_content_bytes = base64.b64decode(file_content_base64)
+        except Exception as e:
+            return {
+                'statusCode': 400,
+                'message': f"Invalid Base64 content for file_content: {str(e)}"
+            }
+
+        content_type = 'application/octet-stream'
+        if file_name.lower().endswith('.png'):
+            content_type = 'image/png'
+
+        s3.put_object(
+            Bucket=bucket_name, 
+            Key=file_name, 
+            Body=file_content_bytes,
+            ContentType=content_type
+        )
+        
         return {
             'statusCode': 200,
             'message': f'File {file_name} uploaded to bucket {bucket_name} successfully'
@@ -104,7 +122,6 @@ def upload_file_handler(event, context):
             'message': str(e)
         }
     except Exception as e:
-        print(f"Error in upload_file_handler: {e}")
         return {
             'statusCode': 500,
             'message': f"Failed to upload file: {str(e)}"
