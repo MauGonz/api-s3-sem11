@@ -8,7 +8,7 @@ provider:
   memorySize: 256
   timeout: 30
   iam:
-    role: arn:aws:iam::447891120606:role/LabRole
+    role: arn:aws:iam::651018496028:role/LabRole
 
 functions:
   lista_buckets:
