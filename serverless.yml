@@ -1,0 +1,54 @@
+org: maugonz
+service: api-s3
+
+provider:
+  name: aws
+  runtime: python3.13
+  # Default memory size for functions (default: 256MB)
+  memorySize: 256
+  timeout: 30
+  iam:
+    role: arn:aws:iam::447891120606:role/LabRole
+
+functions:
+  lista_buckets:
+    handler: lista_buckets.lambda_handler
+    memorySize: 512
+    events:
+      - http:
+          path: /s3/lista-buckets
+          method: get
+          cors: true
+          integration: lambda
+  lista_objetos_bucket:
+    handler: lista_objetos_bucket.lambda_handler
+    events:
+      - http:
+          path: /s3/bucket/lista-objetos
+          method: post
+          cors: true
+          integration: lambda
+  create_bucket:
+    handler: s3_operations.create_bucket_handler
+    events:
+      - http:
+          path: /s3/create-bucket
+          method: post
+          cors: true
+          integration: lambda
+  create_directory:
+    handler: s3_operations.create_directory_handler
+    events:
+      - http:
+          path: /s3/bucket/create-directory
+          method: post
+          cors: true
+          integration: lambda
+  upload_file:
+    handler: s3_operations.upload_file_handler
+    events:
+      - http:
+          path: /s3/bucket/upload-file
+          method: post
+          cors: true
+          integration: lambda
