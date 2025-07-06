@@ -3,50 +3,50 @@ import json
 
 s3 = boto3.client('s3')
 
-def create_bucket_handler(event, context):
-    try:
-        body = json.loads(event['body'])
-        bucket_name = body['bucket_name']
-        s3.create_bucket(Bucket=bucket_name)
-        return {
-            'statusCode': 200,
-            'message': f'Bucket {bucket_name} created successfully'
-        }
-    except Exception as e:
-        return {
-            'statusCode': 500,
-            'message': str(e)
-        }
-
 def create_directory_handler(event, context):
+    print(f"Received event: {event}")
+    print(f"Type of event['body']: {type(event.get('body'))}")
+    print(f"Content of event['body']: {event.get('body')}")
+
     try:
-        body = json.loads(event['body'])
-        bucket_name = body['bucket_name']
-        directory_name = body['directory_name']
-        s3.put_object(Bucket=bucket_name, Key=(directory_name + '/') )
+        body = event.get('body')
+
+        if isinstance(body, str):
+            payload = json.loads(body)
+        elif isinstance(body, dict):
+            payload = body
+        else:
+            raise TypeError("Request body must be a string (JSON) or a dictionary.")
+
+        bucket_name = payload.get('bucket_name')
+        directory_name = payload.get('directory_name')
+
+        if not bucket_name or not directory_name:
+            return {
+                'statusCode': 400,
+                'message': 'Missing bucket_name or directory_name in request body.'
+            }
+
+        s3.put_object(Bucket=bucket_name, Key=(directory_name + '/'))
+
         return {
             'statusCode': 200,
             'message': f'Directory {directory_name} created in bucket {bucket_name} successfully'
         }
-    except Exception as e:
+    except json.JSONDecodeError as e:
+        print(f"JSON Decoding Error: {e}")
         return {
-            'statusCode': 500,
-            'message': str(e)
+            'statusCode': 400,
+            'message': f"Invalid JSON format in request body: {e}"
         }
-
-def upload_file_handler(event, context):
-    try:
-        body = json.loads(event['body'])
-        bucket_name = body['bucket_name']
-        file_name = body['file_name']
-        file_content = body['file_content']
-
-        s3.put_object(Bucket=bucket_name, Key=file_name, Body=file_content)
+    except TypeError as e:
+        print(f"Type Error in Lambda: {e}")
         return {
-            'statusCode': 200,
-            'message': f'File {file_name} uploaded to bucket {bucket_name} successfully'
+            'statusCode': 400,
+            'message': f"Bad request payload type: {e}"
         }
     except Exception as e:
+        print(f"General Error in Lambda: {e}")
         return {
             'statusCode': 500,
             'message': str(e)
